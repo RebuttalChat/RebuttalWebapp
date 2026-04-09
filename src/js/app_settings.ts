@@ -1,4 +1,4 @@
-import { type AppSettings } from "./types.ts";
+import { type AppSettings } from "./types";
 
 function get_config<T extends string | number | boolean | null>(
     name: string,

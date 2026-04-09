@@ -1,4 +1,4 @@
-import { parser } from '../js/parser.ts';
+import { parser } from './src/js/parser';
 
 describe('Parser', () => {
 

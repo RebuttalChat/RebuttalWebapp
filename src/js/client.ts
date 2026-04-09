@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
-import { ws_func } from './protocol.ts';
-import { create_sender } from './sender.ts';
-import { type Room, type User, ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, UserUUID, ConnectionUUID, RoomUUID, is_uuid, ClientCredentials } from './types.ts';
+import { ws_func } from './protocol';
+import { create_sender } from './sender';
+import { type Room, type User, ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, UserUUID, ConnectionUUID, RoomUUID, is_uuid, ClientCredentials } from './types';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';

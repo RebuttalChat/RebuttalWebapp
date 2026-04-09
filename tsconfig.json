@@ -1,19 +1,16 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
-    "allowJs": true,
-    "checkJs": false,
-    "target": "es2015",
-    "module": "node16",
+    "target": "esnext",
+    "module": "esnext",
     "lib": ["es2016", "dom", "dom.iterable", "ES2021.String"],
     "resolveJsonModule": true,
     "strict": true,
     "noImplicitAny": false,
-    "moduleResolution": "node16",
+    "moduleResolution": "bundler",
     "sourceMap": false,
-    "outDir": "dist",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     "paths": {
       "*": ["./node_modules/*"]
     },

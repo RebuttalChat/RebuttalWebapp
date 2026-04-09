@@ -1,5 +1,5 @@
 import { BodyPix } from '@tensorflow-models/body-pix';
-import { parser } from './parser.ts';
+import { parser } from './parser';
 
 export type UUID = string & { __uuid: void };
 

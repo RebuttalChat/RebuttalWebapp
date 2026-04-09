@@ -1,4 +1,4 @@
-import { create_app } from "./app.ts";
+import { create_app } from "./app";
 
 window.onload = () => {
     // Store on window to allow access from debug console

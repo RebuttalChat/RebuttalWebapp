@@ -1,4 +1,4 @@
-import { Sender, SendMessage, UserUUID, UUID, VideoReqType, type Message, type RoomUUID } from "./types.ts";
+import { Sender, SendMessage, UserUUID, UUID, VideoReqType, type Message, type RoomUUID } from "./types";
 
 export function create_sender(): Sender {
     return {

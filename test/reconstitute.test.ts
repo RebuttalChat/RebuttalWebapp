@@ -1,5 +1,5 @@
-import { create_app } from "../js/app.ts";
-import { type RebuttalApp } from "../js/types.ts";
+import { create_app } from "./src/js/app";
+import { type RebuttalApp } from "./src/js/types";
 const rebuttal_app: RebuttalApp = create_app(true);
 
 

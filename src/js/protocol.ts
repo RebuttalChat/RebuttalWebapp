@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { RebuttalClient, RebuttalClientInternal } from "./types.ts";
+import { RebuttalClient, RebuttalClientInternal } from "./types";
 import * as QRCode from 'qrcode';
 
 export const ws_func = {

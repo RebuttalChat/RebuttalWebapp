@@ -1,11 +1,11 @@
 // Instance of types.ts RebuttalApp
-import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, ConnectionUUID, AudioList, is_uuid, AppHTML, ClientCredentials, exact_device } from "./types.ts";
-import { create_app_settings } from "./app_settings.ts";
+import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, ConnectionUUID, AudioList, is_uuid, AppHTML, ClientCredentials, exact_device } from "./types";
+import { create_app_settings } from "./app_settings";
 import app_context_menu_item from "../templates/app_context_menu_item.html";
 import { v4 as uuidv4 } from 'uuid';
-import { create_client } from "./client.ts";
-import { parser } from "./parser.ts";
-import { create_sound_reader } from "./sound_reader.ts";
+import { create_client } from "./client";
+import { parser } from "./parser";
+import { create_sound_reader } from "./sound_reader";
 
 export function create_app(no_init = false) {
     // Functions in Internal app should not be called from outside and are intended ONLY to assist readability and deduplication
