@@ -1,11 +1,11 @@
 // Instance of types.ts RebuttalApp
-import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, ConnectionUUID, AudioList, is_uuid, AppHTML, ClientCredentials, exact_device } from "./types";
-import { create_app_settings } from "./app_settings";
+import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, ConnectionUUID, AudioList, is_uuid, AppHTML, ClientCredentials, exact_device } from "./types.ts";
+import { create_app_settings } from "./app_settings.ts";
 import app_context_menu_item from "../templates/app_context_menu_item.html";
 import { v4 as uuidv4 } from 'uuid';
-import { create_client } from "./client";
-import { parser } from "./parser";
-import { create_sound_reader } from "./sound_reader";
+import { create_client } from "./client.ts";
+import { parser } from "./parser.ts";
+import { create_sound_reader } from "./sound_reader.ts";
 
 export function create_app(no_init = false) {
     // Functions in Internal app should not be called from outside and are intended ONLY to assist readability and deduplication
@@ -645,7 +645,7 @@ export function create_app(no_init = false) {
                     throw new Error("UUID was not a UUID");
                 }
                 console.log("URL After : " + url.toString());
-                this.client_list.set(new_uuid, create_client(new_uuid, this, url.href, creds));
+                this.client_list.set(new_uuid, create_client(new_uuid, this, url, creds));
                 this.setActiveTab(new_uuid);
             } catch (e) {
                 console.log("Skipping probable error server hostname : '" + hostname + "'");
@@ -689,7 +689,7 @@ export function create_app(no_init = false) {
 
                 const not_random_uuid = "3d1462c5-9346-4aed-8813-36a63ed5c3f4";
                 if (is_uuid(not_random_uuid)) {
-                    this.client_list.set(not_random_uuid, create_client(not_random_uuid, this, "this-server", { autoconnect: false, invite: id }));
+                    this.client_list.set(not_random_uuid, create_client(not_random_uuid, this, url, { autoconnect: false, invite: id }));
                     this.setActiveTab(not_random_uuid);
                     return;
                 }

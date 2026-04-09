@@ -1,5 +1,5 @@
 // Pushes rebuttal_app and ipc into global scope to allow us to avoid the type checker complaints
-import { RebuttalApp } from "./types";
+import { RebuttalApp } from "./types.ts";
 export { };
 declare global {
   interface Window {

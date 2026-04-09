@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { RebuttalClient, RebuttalClientInternal } from "./types";
+import { RebuttalClient, RebuttalClientInternal } from "./types.ts";
 import * as QRCode from 'qrcode';
 
 export const ws_func = {
@@ -209,12 +209,14 @@ export const ws_func = {
     },
     'invite': (client: RebuttalClient, data: any) => {
         console.log("invite " + data);
-        client.el.invite_user_reply.textContent = data.url;
+        const url = client.getServerURL();
+        const invite_url = 'https://' + url.hostname + (url.port ? ':' + url.port : '') + '/?invite=' + data.invite_code
+        client.el.invite_user_reply.textContent = invite_url;
 
         client.el.invite_user_reply.onclick = () => {
-            navigator.clipboard.writeText(data.url).then(() => { }, () => { });
+            navigator.clipboard.writeText(invite_url).then(() => { }, () => { });
         }
-        QRCode.toCanvas(client.el.invite_qr_code, data.url).catch((err) => { console.log("Unable to generate QR code " + err) });
+        QRCode.toCanvas(client.el.invite_qr_code, invite_url).catch((err) => { console.log("Unable to generate QR code " + err) });
     },
     'sendMessage': (client: RebuttalClient, data: any) => {
         const { roomid, message } = data;

@@ -1,5 +1,5 @@
-import { BodyPix } from '@tensorflow-models/body-pix/dist';
-import { parser } from './parser';
+import { BodyPix } from '@tensorflow-models/body-pix';
+import { parser } from './parser.ts';
 
 export type UUID = string & { __uuid: void };
 
@@ -289,6 +289,7 @@ export interface RebuttalClient {
     getApp(): RebuttalApp,
     getServerImage(): string, // URL for the server img
     getServerName(): string,
+    getServerURL(): URL
     getUserUUID(): UserUUID | null,
     setUserUUID(userid: UserUUID | null);
     getUsername(): string, // The friendly name of the user on this server
@@ -391,7 +392,7 @@ export type RebuttalClientInternal = RebuttalClient & {
     ws: WebSocket | null,
     autoconnect: boolean,
     connection_id: ConnectionUUID;
-    hostname: string,
+    hostname: URL,
     username: string | undefined,
     password: string | undefined,
     invite: UUID | undefined,

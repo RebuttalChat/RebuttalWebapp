@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
-import { ws_func } from './protocol';
-import { create_sender } from './sender';
-import { type Room, type User, ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, UserUUID, ConnectionUUID, RoomUUID, is_uuid, ClientCredentials } from './types';
+import { ws_func } from './protocol.ts';
+import { create_sender } from './sender.ts';
+import { type Room, type User, ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, UserUUID, ConnectionUUID, RoomUUID, is_uuid, ClientCredentials } from './types.ts';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';
@@ -14,7 +14,7 @@ import { drawBokehEffect, load } from '@tensorflow-models/body-pix';
 import * as tf from '@tensorflow/tfjs';
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
-export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, hostname: string, credentials: ClientCredentials) {
+export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
 
     // Create room HTML.
     const app_window = document.getElementById("appWindow");
@@ -186,6 +186,9 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         },
         getServerName: function (): string {
             return this.server_name;
+        },
+        getServerURL: function (): URL {
+            return this.hostname;
         },
         getUserUUID: function (): UserUUID | null {
             return this.user_uuid;
@@ -360,7 +363,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 if (!this.hostname) {
                     return;
                 }
-                ipc_location = this.hostname;
+                ipc_location = this.hostname.href;
             }
             if (ipc_location == "") {
                 throw new Error("No url to connect to");

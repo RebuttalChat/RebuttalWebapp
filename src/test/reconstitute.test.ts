@@ -1,5 +1,8 @@
-import { create_app } from "../src/js/app";
-let rebuttal_app = create_app(true);
+import { create_app } from "../js/app.ts";
+import { type RebuttalApp } from "../js/types.ts";
+const rebuttal_app: RebuttalApp = create_app(true);
+
+
 describe("App and Client reconstitute HTML correct", () => {
     it("Accepts a simple HTML entity", () => {
         expect(rebuttal_app.reconstitute("<br>", {}).outerHTML).toBe("<br>");
@@ -14,7 +17,7 @@ describe("App and Client reconstitute HTML correct", () => {
     });
 
     it("Returns existing element when found in DOM", () => {
-        let div = document.createElement("div");
+        const div = document.createElement("div");
         div.id = "image";
         document.getElementsByTagName("body")[0].appendChild(div);
         expect(rebuttal_app.get_or_reconstitute('image', "<img id='image' src='test.png'>", {}).outerHTML).toBe("<div id=\"image\"></div>");
