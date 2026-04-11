@@ -2,7 +2,12 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["es2016", "dom", "dom.iterable", "ES2021.String"],
+    "lib": [
+      "es2016",
+      "dom",
+      "dom.iterable",
+      "ES2021.String"
+    ],
     "resolveJsonModule": true,
     "strict": true,
     "noImplicitAny": false,
@@ -13,9 +18,22 @@
     "esModuleInterop": true,
     "outDir": "./dist",
     "paths": {
-      "*": ["./node_modules/*"]
+      "*": [
+        "./node_modules/*"
+      ]
     },
-    "types": ["jest"]
+    "types": [
+      "jest"
+    ],
+    "plugins": [
+      {
+        "transform": "typia/lib/transform"
+      }
+    ],
+    "skipLibCheck": true,
+    "strictNullChecks": true
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

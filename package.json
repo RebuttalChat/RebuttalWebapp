@@ -31,7 +31,8 @@
     "ts-jest": "^29.3.4",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
+    "ts-patch": "^3.3.0",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.33.1",
     "uuid": "^11.1.0",
     "webpack": "^5.104.1",
@@ -39,7 +40,8 @@
   },
   "scripts": {
     "build": "sass src:dist && ./node_modules/.bin/webpack",
-    "test": " jest"
+    "test": " jest",
+    "prepare": "ts-patch install"
   },
   "dependencies": {
     "@tensorflow-models/body-pix": "^2.2.1",
@@ -47,7 +49,9 @@
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@tensorflow/tfjs-converter": "^4.22.0",
     "@tensorflow/tfjs-core": "^4.22.0",
+    "@typia/unplugin": "^12.0.2",
     "qrcode": "^1.5.4",
+    "typia": "^12.0.2",
     "url": "^0.11.4"
   }
 }

@@ -13,7 +13,11 @@ import app_template_server_icon from '../templates/app_server_icon.html';
 import { drawBokehEffect, load } from '@tensorflow-models/body-pix';
 import * as tf from '@tensorflow/tfjs';
 import { is_uuid, RoomUUID, UserUUID, v1_shared_room, v1_shared_user } from '../../protocol/v1/shared';
-import { cast_v1_stc } from '../../protocol/v1/server_to_client';
+import { v1_stc_packet } from '../../protocol/v1/server_to_client';
+import { v0_stc_packet } from '../../protocol/v0/server_to_client';
+import typia from 'typia';
+
+type packet = v1_stc_packet | v0_stc_packet;
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
 export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
@@ -382,17 +386,15 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                     console.log("Message missing data");
                     return;
                 }
-                const unknown_object: unknown = JSON.parse(message.data);
-                const packet = cast_v1_stc(unknown_object);
-                if (packet && packet.type in ws_func) {
-                    const func = ws_func[packet.type];
-                    func(this, packet);
+                if (!typia.is<packet>(message.data)) {
+                    console.log("Invalid Packet");
+                    return;
+                }
+                if (message.data.type in ws_func) {
+                    const func = ws_func[message.data.type];
+                    func(this, message.data);
                 } else {
-                    if (packet) {
-                        console.log("Unknown message type : " + packet.type);
-                    } else {
-                        console.log("Packet without type");
-                    }
+                    console.log("No packet handler");
                     console.log(message.data);
                 }
             };
