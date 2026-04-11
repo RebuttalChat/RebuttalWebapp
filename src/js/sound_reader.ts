@@ -72,18 +72,11 @@ export function create_sound_reader(src: MediaStream) {
         const timer_id = setInterval(() => {
             if (sreader.talked) {
                 for (const client of window.rebuttal_app.getAllClients()) {
-                    const uuid = client.getUserUUID();
-                    if (uuid != null) {
-                        client.send.talking(uuid, true);
-                    }
-
+                    client.send.talking(true);
                 }
             } else {
                 for (const client of window.rebuttal_app.getAllClients()) {
-                    const uuid = client.getUserUUID();
-                    if (uuid != null) {
-                        client.send.talking(uuid, false);
-                    }
+                    client.send.talking(false);
                 }
             }
         }, 200);

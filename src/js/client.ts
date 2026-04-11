@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
 import { ws_func } from './protocol';
 import { create_sender } from './sender';
-import { type Room, type User, ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, UserUUID, ConnectionUUID, RoomUUID, is_uuid, ClientCredentials } from './types';
+import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, ConnectionUUID, ClientCredentials } from './types';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';
@@ -12,6 +12,8 @@ import client_template_user_selector from '../templates/client-user-selector.htm
 import app_template_server_icon from '../templates/app_server_icon.html';
 import { drawBokehEffect, load } from '@tensorflow-models/body-pix';
 import * as tf from '@tensorflow/tfjs';
+import { is_uuid, RoomUUID, UserUUID, v1_shared_room, v1_shared_user } from '../../protocol/v1/shared';
+import { cast_v1_stc } from '../../protocol/v1/server_to_client';
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
 export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
@@ -171,7 +173,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         setUserUUID(userid: UserUUID) {
             this.user_uuid = userid;
         },
-        setUserList(userlist: User[]) {
+        setUserList(userlist: v1_shared_user[]) {
             this.user_list = userlist;
             this.populateUserList();
         },
@@ -222,7 +224,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 this.el.invite_user_groups.appendChild(option);
             }
         },
-        getRoom(roomid: RoomUUID): Room | null {
+        getRoom(roomid: RoomUUID): v1_shared_room | null {
             for (const room of this.room_list) {
                 if (room.id == roomid) {
                     return room;
@@ -230,15 +232,15 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             }
             return null;
         },
-        getRoomList: function (): Room[] {
+        getRoomList: function (): v1_shared_room[] {
             return this.room_list;
         },
-        setRoomList: function (roomlist: Room[]) {
+        setRoomList: function (roomlist: v1_shared_room[]) {
             this.room_list = roomlist;
             this.populateRoomList();
             this.populateRoom();
         },
-        getUserList: function (): User[] {
+        getUserList: function (): v1_shared_user[] {
             return this.user_list;
         },
         updateRoomMessageSegment: function (roomid: RoomUUID, idx: number, messages: Message[]) {
@@ -260,7 +262,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             //this.context_menus = new_menus;
             // TODO Populate anything?
         },
-        getCurrentView: function (): Room | null {
+        getCurrentView: function (): v1_shared_room | null {
             if (this.current_view != null) {
                 for (const room of this.room_list) {
                     if (room.id == this.current_view) {
@@ -302,7 +304,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 this.populateRoom();
             }
         },
-        getCurrentVoiceRoom: function (): Room | null {
+        getCurrentVoiceRoom: function (): v1_shared_room | null {
             if (this.current_voice != null) {
                 for (const room of this.room_list) {
                     if (room.id == this.current_voice) {
@@ -315,7 +317,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         isShowingPopup: function (): boolean {
             throw new Error('Function not implemented.');
         },
-        getUserByUUID: function (uuid: string): User | null {
+        getUserByUUID: function (uuid: string): v1_shared_user | null {
             for (const user of this.user_list) {
                 if (user.id == uuid) {
                     return user;
@@ -323,8 +325,8 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             }
             return null;
         },
-        getUsersByPartialName: function (bit: string): User[] {
-            const ret: User[] = [];
+        getUsersByPartialName: function (bit: string): v1_shared_user[] {
+            const ret: v1_shared_user[] = [];
             for (const user of this.user_list) {
                 if (user.name.toLowerCase().indexOf(bit.toLowerCase()) == 0) {
                     ret.push(user);
@@ -376,16 +378,22 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             }
             this.send.ws = this.ws;
             this.ws.onmessage = (message) => {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-                const data: any = JSON.parse(message.data);
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                if (data['type'] in ws_func) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    ws_func[data['type']](this, data);
+                if (!message.data || !(typeof message.data === 'string')) {
+                    console.log("Message missing data");
+                    return;
+                }
+                const unknown_object: unknown = JSON.parse(message.data);
+                const packet = cast_v1_stc(unknown_object);
+                if (packet && packet.type in ws_func) {
+                    const func = ws_func[packet.type];
+                    func(this, packet);
                 } else {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    console.log("Unknown message type : " + data['type']);
-                    console.log(data);
+                    if (packet) {
+                        console.log("Unknown message type : " + packet.type);
+                    } else {
+                        console.log("Packet without type");
+                    }
+                    console.log(message.data);
                 }
             };
             this.ws.onclose = () => {
@@ -522,7 +530,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 this.i_am_watching = this.i_am_watching.filter(item => item != user);
             }
             this.populateRoom();
-            this.send.letmesee(user, this.getUserUUID()!, watching);
+            this.send.letmesee(user, watching);
 
         },
         populateRoom() {
@@ -600,7 +608,10 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                                     message_message.innerHTML = this.getApp().getParser().parse(message.text).innerHTML;
                                     message_message.onclick = () => window.open(message.url, '_blank')?.focus()
                                 } else {
-                                    const user = this.getUserByUUID(message.userid);
+                                    let user: v1_shared_user | null = null;
+                                    if (is_uuid(message.userid)) {
+                                        user = this.getUserByUUID(message.userid);
+                                    }
                                     const username = user ? user.name : '[deleted user]';
                                     const me = this.getUserUUID();
                                     if (message.tags && me && message.tags.includes(me)) {
@@ -801,7 +812,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             const stream = this.webcam_streams.get(userid);
             return stream ? stream : null;
         },
-        populateRoomVideo(user: User) {
+        populateRoomVideo(user: v1_shared_user) {
             const user_video = this.get_or_reconstitute(this.connection_id + "-video-pair-" + user.id, client_template_video, { userid: user.id, avatar: user.avatar ? user.avatar : "", uservolume: "1.0" });
             this.el.voice_view.appendChild(user_video);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1175,7 +1186,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             values.client = this.connection_id;
             return this.getApp().reconstitute(input, values);
         },
-        updateAutocomplete(userlist: User[] | null) {
+        updateAutocomplete(userlist: v1_shared_user[] | null) {
             let count = 0;
             const ac = document.getElementById('autocomplete')
             if (ac == null) {

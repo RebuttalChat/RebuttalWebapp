@@ -1,17 +1,9 @@
 import { BodyPix } from '@tensorflow-models/body-pix';
 import { parser } from './parser';
+import { UUID, RoomUUID, UserUUID, v1_shared_room, v1_shared_user, v1_shared_context_type, v1_shared_message_ephemeral } from '../../protocol/v1/shared';
+import { v1_cts_packet } from '../../protocol/v1/client_to_server';
+import { v0_cts_packet } from '../../protocol/v0/client_to_server';
 
-export type UUID = string & { __uuid: void };
-
-const uuid_regex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
-
-export function is_uuid(uuid: string): uuid is UUID {
-    return uuid_regex.test(uuid);
-}
-
-// Split types to generate TS warnings about wrong UUID type without runtime overhead
-export type UserUUID = UUID;
-export type RoomUUID = UUID;
 export type ConnectionUUID = UUID;
 
 export enum ServerState {
@@ -34,30 +26,6 @@ export interface Theme {
 
 export type WatchList = Map<UserUUID, boolean>;
 
-export interface User {
-    id: UserUUID;
-    currentRoom: string | null;
-    livestate: boolean;
-    livelabel: string;
-    name: string;
-    talking: boolean;
-    suppress: boolean;
-    status: boolean;
-    avatar: string | undefined;
-    hidden: boolean;
-}
-
-export interface Room {
-    id: RoomUUID;
-    type: string;
-    name: string;
-    userlist: User[];
-}
-
-export interface SendMessage {
-    text: string;
-    tags: string[];
-}
 
 export interface Message {
     roomid: string;
@@ -299,16 +267,16 @@ export interface RebuttalClient {
     getServerGroups(): string[],
     setServerGroups(groups: string[]),
 
-    getRoom(roomid: RoomUUID): Room | null,
-    getRoomList(): Room[],
-    setRoomList(roomlist: Room[]),
-    getUserList(): User[],
-    setUserList(userlist: User[]),
+    getRoom(roomid: RoomUUID): v1_shared_room | null,
+    getRoomList(): v1_shared_room[],
+    setRoomList(roomlist: v1_shared_room[]),
+    getUserList(): v1_shared_user[],
+    setUserList(userlist: v1_shared_user[]),
     updateRoomMessageSegment(roomid: RoomUUID, idx: number, messages: Message[]),
     setContextMenus(menus: Map<string, ContextMenuItem[]>): void,
-    getCurrentView(): Room | null,
+    getCurrentView(): v1_shared_room | null,
     setCurrentView(room: RoomUUID): void,
-    getCurrentVoiceRoom(): Room | null,
+    getCurrentVoiceRoom(): v1_shared_room | null,
     setCurrentVoiceRoom(room: RoomUUID | null),
     get_connection_id(): ConnectionUUID,
 
@@ -321,8 +289,8 @@ export interface RebuttalClient {
     showSignUp(),
     setLoginReply(message: string),
 
-    getUserByUUID(uuid: string): User | null, // TODO UUID?
-    getUsersByPartialName(bit: string): User[],
+    getUserByUUID(uuid: UserUUID): v1_shared_user | null, // TODO UUID?
+    getUsersByPartialName(bit: string): v1_shared_user[],
     loadMoreText(),
 
     send: Sender,
@@ -356,7 +324,7 @@ export interface RebuttalClient {
     setWatching(user: UserUUID, watching: boolean),
     setWatchingMe(userid: UserUUID, watching: boolean),
     populateRoom(),
-    populateRoomVideo(user: User),
+    populateRoomVideo(user: v1_shared_user),
     populateUserList(),
     populateRoomList(),
     updatePerms(),
@@ -368,22 +336,21 @@ export interface VideoReqType {
 
 export interface Sender {
     ws: WebSocket | null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    raw: (json: any) => void,
+    raw: (json: v1_cts_packet | v0_cts_packet) => void,
     login: (username: string, password: string, protocol_to: string) => void,
     video: (payload: RTCIceCandidateInit | RTCSessionDescriptionInit | VideoReqType, touserid: UserUUID) => void,
-    letmesee: (touserid: UserUUID, fromuserid: UserUUID, message: boolean) => void,
+    letmesee: (touserid: UserUUID, message: boolean) => void,
     chatdev: (audio: boolean, video: boolean) => void,
     update_message: (roomid: RoomUUID, messageid: number, message: Message) => void,
-    contextoption: (context: string, option: string, value: string) => void,
-    message: (roomid: RoomUUID, message: SendMessage) => void,
-    message_with_upload: (roomid: RoomUUID, message: SendMessage, filename: string, b64_contents: string) => void,
+    contextoption: (context: v1_shared_context_type, option: string, value: string) => void,
+    message: (roomid: RoomUUID, message: v1_shared_message_ephemeral) => void,
+    message_with_upload: (roomid: RoomUUID, message: v1_shared_message_ephemeral, filename: string, b64_contents: string) => void,
     get_messages: (roomid: RoomUUID, segment?: number) => void,
     join_room: (roomid: RoomUUID) => void,
     leave_room: () => void,
     invite: (groupName: string) => void,
     signup: (invite: UUID, friendly_name: string, username: string, password: string) => void,
-    talking: (userid: UserUUID, talking: boolean) => void,
+    talking: (talking: boolean) => void,
 }
 
 // A Super-type with extra storage. Used similar to private members in other languages
@@ -396,8 +363,8 @@ export type RebuttalClientInternal = RebuttalClient & {
     username: string | undefined,
     password: string | undefined,
     invite: UUID | undefined,
-    user_list: User[],
-    room_list: Room[],
+    user_list: v1_shared_user[],
+    room_list: v1_shared_room[],
     messages: Map<RoomUUID, Map<number, Message[]>>,
     current_view: RoomUUID | null,
     current_voice: RoomUUID | null,
@@ -425,7 +392,7 @@ export type RebuttalClientInternal = RebuttalClient & {
     webcam_streams: Map<UserUUID, MediaStream>,
     skip_scroll_calc: boolean,
 
-    updateAutocomplete(userlist: User[] | null),
+    updateAutocomplete(userlist: v1_shared_user[] | null),
     autocomplete(userid: UserUUID | null),
     amIWatching(userid: UserUUID),
     isWatchingMe(userid: UserUUID),
@@ -437,7 +404,7 @@ export type RebuttalClientInternal = RebuttalClient & {
 
     popup_change_message(message: Message),
     has_perm(perm: string): boolean,
-    populate_context_menu(type: string, id: string): ContextMenuItem[],
+    populate_context_menu(type: v1_shared_context_type, id: string): ContextMenuItem[],
     reconstitute(template: string, values: ReconstituteValues): HTMLElement,
     get_or_reconstitute(id: string, template: string, values: ReconstituteValues): HTMLElement,
     init: () => void,

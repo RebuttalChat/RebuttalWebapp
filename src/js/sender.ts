@@ -1,4 +1,5 @@
-import { Sender, SendMessage, UserUUID, UUID, VideoReqType, type Message, type RoomUUID } from "./types";
+import { RoomUUID, UserUUID, UUID, v1_shared_context_type, v1_shared_message_ephemeral } from "../../protocol/v1/shared";
+import { Sender, VideoReqType, type Message, } from "./types";
 
 export function create_sender(): Sender {
     return {
@@ -10,12 +11,13 @@ export function create_sender(): Sender {
         login: function (email: string, password: string, protocol: string) {
             this.raw({ type: 'login', email, password, protocol });
         },
-        video: function (payload: VideoReqType | RTCIceCandidateInit | RTCSessionDescriptionInit, touserid: string) {
+        video: function (payload: VideoReqType | RTCIceCandidateInit | RTCSessionDescriptionInit, touserid: UserUUID) {
             console.log({ type: 'video', touserid, payload })
-            this.raw({ type: 'video', touserid, payload });
+            const payload_str = payload as string;
+            this.raw({ type: 'video', touserid, payload: payload_str });
         },
-        letmesee: function (touserid: UserUUID, fromuserid: UserUUID, message: boolean) {
-            this.raw({ type: 'letmesee', touserid, fromuserid, message });
+        letmesee: function (touserid: UserUUID, message: boolean) {
+            this.raw({ type: 'letmesee', touserid, message });
         },
         chatdev: function (audio: boolean, video: boolean) {
             this.raw({ type: 'chatdev', audio, video });
@@ -23,13 +25,13 @@ export function create_sender(): Sender {
         update_message: function (roomid: RoomUUID, messageid: number, message: Message) {
             this.raw({ type: 'updatemessage', roomid, messageid, message })
         },
-        contextoption: function (context: string, option: string, value: string) {
+        contextoption: function (context: v1_shared_context_type, option: string, value: string) {
             this.raw({ type: 'contextoption', context, option, value });
         },
-        message: function (roomid: RoomUUID, message: SendMessage) {
-            this.raw({ type: 'message', roomid, message });
+        message: function (roomid: RoomUUID, message: v1_shared_message_ephemeral) {
+            this.raw({ type: 'message', roomid, message, filename: null, rawfile: null });
         },
-        message_with_upload: function (roomid: RoomUUID, message: SendMessage, filename: string, rawfile: string) {
+        message_with_upload: function (roomid: RoomUUID, message: v1_shared_message_ephemeral, filename: string, rawfile: string) {
             this.raw({ type: 'message', roomid, message, filename, rawfile });
         },
         get_messages: function (roomid: RoomUUID, segment?: number) {
@@ -42,13 +44,13 @@ export function create_sender(): Sender {
             this.raw({ type: 'leaveroom' });
         },
         invite(group_name: string) {
-            this.raw({ type: 'invite', group_name });
+            this.raw({ type: 'invite', groupName: group_name });
         },
         signup(sign_up: UUID, user_name: string, email: string, password: string) {
             this.raw({ type: 'signup', signUp: sign_up, userName: user_name, email, password })
         },
-        talking(userid: UserUUID, talking: boolean) {
-            this.raw({ type: "talking", talking, userid });
+        talking(talking: boolean) {
+            this.raw({ type: "talking", talking });
         },
     }
 }

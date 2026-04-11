@@ -7,10 +7,11 @@
     "strict": true,
     "noImplicitAny": false,
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "sourceMap": false,
     "esModuleInterop": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "paths": {
       "*": ["./node_modules/*"]
     },
