@@ -1395,47 +1395,50 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                         return true;
                     }
                     event.preventDefault();
-                    //input.onsubmit(); //TODO Come back for enter-to-send
+                    this.send_message();
                     return false;
                 }
             }
             this.el.text_input_form.onsubmit = (event) => {
                 if (event) { event.preventDefault(); }
-                const text = this.el.text_input.value;
-
-                if (this.cached_file_upload) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        if (!this.cached_file_upload) {
-                            return;
-                        }
-                        if (event.target) {
-                            const result = event.target.result as string;
-                            const split = result.split(',');
-                            this.send.message_with_upload(
-                                rebuttal.getCurrentView()!.id,
-                                { text, tags: rebuttal.cached_tags },
-                                "upload",
-                                split[1]
-                            );
-
-                        }
-                    };
-                    reader.readAsDataURL(this.cached_file_upload);
-                } else {
-                    this.send.message(this.getCurrentView()!.id,
-                        { text, tags: this.cached_tags }
-                    );
-                }
-                rebuttal.el.text_input.value = '';
-                rebuttal.cached_tags = [];
-                rebuttal.cached_file_upload = null;
-                rebuttal.populateRoom();
-                rebuttal.el.text_input.focus();
+                this.send_message();
                 return false;
             };
             this.el.dnd.style.display = 'none';
             this.connect();
+        },
+        send_message() {
+            const text = this.el.text_input.value;
+
+            if (this.cached_file_upload) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    if (!this.cached_file_upload) {
+                        return;
+                    }
+                    if (event.target) {
+                        const result = event.target.result as string;
+                        const split = result.split(',');
+                        this.send.message_with_upload(
+                            rebuttal.getCurrentView()!.id,
+                            { text, tags: rebuttal.cached_tags },
+                            "upload",
+                            split[1]
+                        );
+
+                    }
+                };
+                reader.readAsDataURL(this.cached_file_upload);
+            } else {
+                this.send.message(this.getCurrentView()!.id,
+                    { text, tags: this.cached_tags }
+                );
+            }
+            rebuttal.el.text_input.value = '';
+            rebuttal.cached_tags = [];
+            rebuttal.cached_file_upload = null;
+            rebuttal.populateRoom();
+            rebuttal.el.text_input.focus();
         },
     };
 

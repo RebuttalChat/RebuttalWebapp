@@ -408,5 +408,6 @@ export type RebuttalClientInternal = RebuttalClient & {
     reconstitute(template: string, values: ReconstituteValues): HTMLElement,
     get_or_reconstitute(id: string, template: string, values: ReconstituteValues): HTMLElement,
     init: () => void,
+    send_message: () => void,
 
 };
