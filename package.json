@@ -40,6 +40,7 @@
   },
   "scripts": {
     "build": "sass src:dist && ./node_modules/.bin/webpack",
+    "build-zip": "yarn run build && cd dist/ && tar -czf ../webapp.tar.gz * && cd -",
     "test": " jest",
     "prepare": "ts-patch install"
   },
