@@ -15,6 +15,7 @@ export function handle_message(client: RebuttalClientInternal,
     unknown_packet: unknown) {
     if (!checker.v1_stc_packet.test(unknown_packet)) {
         console.log("Invalid Packet");
+        console.log(unknown_packet);
         return;
     }
     const packet = unknown_packet as any_packet;
