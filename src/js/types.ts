@@ -1,10 +1,10 @@
 import { BodyPix } from '@tensorflow-models/body-pix';
 import { parser } from './parser';
-import { UUID, RoomUUID, UserUUID, v1_shared_room, v1_shared_user, v1_shared_context_type, v1_shared_message_ephemeral } from '../../protocol/v1/shared';
+import { type RoomUUID, type UserUUID, type ConnUUID, v1_shared_room, v1_shared_user, v1_shared_context_type, v1_shared_message_ephemeral, v1_shared_message_real, v1_shared_message_update } from '../../protocol/v1/shared';
 import { v1_cts_packet } from '../../protocol/v1/client_to_server';
 import { v0_cts_packet } from '../../protocol/v0/client_to_server';
 
-export type ConnectionUUID = UUID;
+export type VideoPayload = VideoReqType | RTCIceCandidateInit | RTCSessionDescriptionInit;
 
 export enum ServerState {
     NO_CONNECTION,
@@ -25,21 +25,6 @@ export interface Theme {
 }
 
 export type WatchList = Map<UserUUID, boolean>;
-
-
-export interface Message {
-    roomid: string;
-    idx: number;
-    text: string;
-    img?: string;
-    url?: string;
-    height?: number;
-    width?: number;
-    userid?: string;
-    tags: string[];
-    type?: string;
-    username: string;
-}
 
 export interface ContextMenu {
     label: string, // TODO i18n
@@ -102,7 +87,7 @@ export type exact_device = {
 };
 
 export interface ClientCredentials {
-    invite?: UUID,
+    invite?: string,
     username?: string,
     password?: string,
     autoconnect: boolean,
@@ -111,11 +96,11 @@ export interface ClientCredentials {
 // The app is the instance of a whole application. This is One window, with any number of Clients in tabs
 export interface RebuttalApp {
     getAllClients(): MapIterator<RebuttalClient>,
-    getClient(id: ConnectionUUID): RebuttalClient | null,
-    setActiveTab(id: ConnectionUUID | null): void,
-    getActiveTab(): ConnectionUUID | null,
+    getClient(id: ConnUUID): RebuttalClient | null,
+    setActiveTab(id: ConnUUID | null): void,
+    getActiveTab(): ConnUUID | null,
     addTab(element: HTMLImageElement): void,
-    removeTab(id: ConnectionUUID): void,
+    removeTab(id: ConnUUID): void,
 
     isShowingPopup(): boolean,
     isShowingServerSettings(): boolean,
@@ -272,13 +257,14 @@ export interface RebuttalClient {
     setRoomList(roomlist: v1_shared_room[]),
     getUserList(): v1_shared_user[],
     setUserList(userlist: v1_shared_user[]),
-    updateRoomMessageSegment(roomid: RoomUUID, idx: number, messages: Message[]),
+    updateRoomMessageSegment(roomid: RoomUUID, idx: number, messages: v1_shared_message_real[]),
     setContextMenus(menus: Map<string, ContextMenuItem[]>): void,
     getCurrentView(): v1_shared_room | null,
+    getCurrentViewUUID(): RoomUUID | null
     setCurrentView(room: RoomUUID): void,
     getCurrentVoiceRoom(): v1_shared_room | null,
     setCurrentVoiceRoom(room: RoomUUID | null),
-    get_connection_id(): ConnectionUUID,
+    get_connection_id(): ConnUUID,
 
     isShowingPopup(): boolean,
 
@@ -289,7 +275,7 @@ export interface RebuttalClient {
     showSignUp(),
     setLoginReply(message: string),
 
-    getUserByUUID(uuid: UserUUID): v1_shared_user | null, // TODO UUID?
+    getUserByUUID(uuid: UserUUID | null): v1_shared_user | null,
     getUsersByPartialName(bit: string): v1_shared_user[],
     loadMoreText(),
 
@@ -309,7 +295,7 @@ export interface RebuttalClient {
     getLiveStream(userid: UserUUID): MediaStream | null,
     getWebcamStream(userid: UserUUID): MediaStream | null,
 
-    userIsMe(user: UserUUID): boolean,
+    userIsMe(user: UserUUID | null): boolean,
     isInVoiceRoom(room: RoomUUID): boolean,
 
     updateDeviceState(): void,
@@ -320,7 +306,7 @@ export interface RebuttalClient {
     getPeerConnection(userid: UserUUID): RTCPeerConnection | undefined,
 
     // Methods to change the client UI
-    cleanupStream(user: UUID),
+    cleanupStream(user: ConnUUID),
     setWatching(user: UserUUID, watching: boolean),
     setWatchingMe(userid: UserUUID, watching: boolean),
     populateRoom(),
@@ -331,17 +317,17 @@ export interface RebuttalClient {
 }
 
 export interface VideoReqType {
-    type: string,
+    message: string,
 }
 
 export interface Sender {
     ws: WebSocket | null,
-    raw: (json: v1_cts_packet | v0_cts_packet) => void,
+    packet: (json: v1_cts_packet | v0_cts_packet) => void,
     login: (username: string, password: string, protocol_to: string) => void,
-    video: (payload: RTCIceCandidateInit | RTCSessionDescriptionInit | VideoReqType, touserid: UserUUID) => void,
+    video: (payload: VideoPayload, touserid: UserUUID) => void,
     letmesee: (touserid: UserUUID, message: boolean) => void,
     chatdev: (audio: boolean, video: boolean) => void,
-    update_message: (roomid: RoomUUID, messageid: number, message: Message) => void,
+    update_message: (message: v1_shared_message_update) => void,
     contextoption: (context: v1_shared_context_type, option: string, value: string) => void,
     message: (roomid: RoomUUID, message: v1_shared_message_ephemeral) => void,
     message_with_upload: (roomid: RoomUUID, message: v1_shared_message_ephemeral, filename: string, b64_contents: string) => void,
@@ -349,7 +335,7 @@ export interface Sender {
     join_room: (roomid: RoomUUID) => void,
     leave_room: () => void,
     invite: (groupName: string) => void,
-    signup: (invite: UUID, friendly_name: string, username: string, password: string) => void,
+    signup: (invite: string, friendly_name: string, username: string, password: string) => void,
     talking: (talking: boolean) => void,
 }
 
@@ -358,14 +344,14 @@ export type RebuttalClientInternal = RebuttalClient & {
     app: RebuttalApp,
     ws: WebSocket | null,
     autoconnect: boolean,
-    connection_id: ConnectionUUID;
+    connection_id: ConnUUID;
     hostname: URL,
     username: string | undefined,
     password: string | undefined,
-    invite: UUID | undefined,
+    invite: string | undefined,
     user_list: v1_shared_user[],
     room_list: v1_shared_room[],
-    messages: Map<RoomUUID, Map<number, Message[]>>,
+    messages: Map<RoomUUID, Map<number, v1_shared_message_real[]>>,
     current_view: RoomUUID | null,
     current_voice: RoomUUID | null,
     context_menus: Map<string, ContextMenu[]>,
@@ -402,7 +388,7 @@ export type RebuttalClientInternal = RebuttalClient & {
     performBodyPix(net: BodyPix, canvas: HTMLCanvasElement, video: HTMLVideoElement): Promise<void>,
     getEarliestTextSegment(roomid: RoomUUID): number | undefined,
 
-    popup_change_message(message: Message),
+    popup_change_message(message: v1_shared_message_real),
     has_perm(perm: string): boolean,
     populate_context_menu(type: v1_shared_context_type, id: string): ContextMenuItem[],
     reconstitute(template: string, values: ReconstituteValues): HTMLElement,

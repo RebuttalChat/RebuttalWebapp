@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
-import { ws_func } from './protocol';
+import { handle_message } from './protocol';
 import { create_sender } from './sender';
-import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, Message, ContextMenuItem, ConnectionUUID, ClientCredentials } from './types';
+import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, ContextMenuItem, ClientCredentials } from './types';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';
@@ -12,15 +12,10 @@ import client_template_user_selector from '../templates/client-user-selector.htm
 import app_template_server_icon from '../templates/app_server_icon.html';
 import { drawBokehEffect, load } from '@tensorflow-models/body-pix';
 import * as tf from '@tensorflow/tfjs';
-import { is_uuid, RoomUUID, UserUUID, v1_shared_room, v1_shared_user } from '../../protocol/v1/shared';
-import { v1_stc_packet } from '../../protocol/v1/server_to_client';
-import { v0_stc_packet } from '../../protocol/v0/server_to_client';
-import typia from 'typia';
-
-type packet = v1_stc_packet | v0_stc_packet;
+import { ConnUUID, type RoomUUID, type UserUUID, v1_shared_message_real, v1_shared_room, v1_shared_user } from '../../protocol/v1/shared';
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
-export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
+export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
 
     // Create room HTML.
     const app_window = document.getElementById("appWindow");
@@ -247,7 +242,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         getUserList: function (): v1_shared_user[] {
             return this.user_list;
         },
-        updateRoomMessageSegment: function (roomid: RoomUUID, idx: number, messages: Message[]) {
+        updateRoomMessageSegment: function (roomid: RoomUUID, idx: number, messages: v1_shared_message_real[]) {
             if (!this.messages.has(roomid)) {
                 this.messages.set(roomid, new Map());
             }
@@ -275,6 +270,9 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 }
             }
             return null;
+        },
+        getCurrentViewUUID: function (): RoomUUID | null {
+            return this.current_view;
         },
         setCurrentView(roomid: RoomUUID): void {
             const room = this.getRoom(roomid);
@@ -321,7 +319,10 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         isShowingPopup: function (): boolean {
             throw new Error('Function not implemented.');
         },
-        getUserByUUID: function (uuid: string): v1_shared_user | null {
+        getUserByUUID: function (uuid: string | null): v1_shared_user | null {
+            if (uuid == null) {
+                return null;
+            }
             for (const user of this.user_list) {
                 if (user.id == uuid) {
                     return user;
@@ -386,17 +387,8 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                     console.log("Message missing data");
                     return;
                 }
-                if (!typia.is<packet>(message.data)) {
-                    console.log("Invalid Packet");
-                    return;
-                }
-                if (message.data.type in ws_func) {
-                    const func = ws_func[message.data.type];
-                    func(this, message.data);
-                } else {
-                    console.log("No packet handler");
-                    console.log(message.data);
-                }
+                const unknown_packet: unknown = JSON.parse(message.data);
+                handle_message(this, unknown_packet);
             };
             this.ws.onclose = () => {
                 console.log("Connection lost");
@@ -608,12 +600,14 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                                     message_user_text.textContent = message.username;
                                     message_user_image.src = message.img;
                                     message_message.innerHTML = this.getApp().getParser().parse(message.text).innerHTML;
-                                    message_message.onclick = () => window.open(message.url, '_blank')?.focus()
+                                    const url = message.url;
+                                    if (url != null) {
+                                        message_message.onclick = () => window.open(url, '_blank')?.focus()
+                                    }
                                 } else {
                                     let user: v1_shared_user | null = null;
-                                    if (is_uuid(message.userid)) {
-                                        user = this.getUserByUUID(message.userid);
-                                    }
+                                    user = this.getUserByUUID(message.userid);
+
                                     const username = user ? user.name : '[deleted user]';
                                     const me = this.getUserUUID();
                                     if (message.tags && me && message.tags.includes(me)) {
@@ -980,7 +974,9 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
 
             pc.onicecandidate = (event) => {
                 console.log("onicecandidate");
-                this.send.video(event, userid);
+                if (event.candidate) {
+                    this.send.video(event.candidate, userid);
+                }
             };
             pc.ontrack = (event) => {
                 console.log("ontrack");
@@ -1056,7 +1052,7 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         },
         restartStream(userid: UserUUID) {
             this.cleanupStream(userid);// Have you tried turning it off and on again
-            this.send.video({ type: 'fuckoff' }, userid);
+            this.send.video({ message: 'fuckoff' }, userid);
             this.startCall(userid);
         },
         updateDeviceState() {
@@ -1092,7 +1088,10 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
         isInVoiceRoom(voice_room: RoomUUID) {
             return this.current_voice == voice_room;
         },
-        userIsMe(user: UserUUID) {
+        userIsMe(user: UserUUID | null) {
+            if (user == null) {
+                return false;
+            }
             return user == this.user_uuid;
         },
         closeConnections() {
@@ -1113,21 +1112,21 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
             this.current_voice = room;
         },
         popup_change_message(message) {
-            if ('idx' in message && 'roomid' in message && is_uuid(message.roomid)) {
+            if (message.idx && message.roomid) {
                 const form = document.createElement('form');
                 const input = document.createElement('textarea');
                 const submit = document.createElement('input')
                 input.value = message.text;
                 submit.type = 'submit';
                 submit.value = 'Change message';
-                const roomid: RoomUUID = message.roomid;
                 form.onsubmit = (e) => {
                     e.preventDefault();
+                    if (!message.idx) {
+                        return;
+                    }
                     message.text = input.value;
                     this.send.update_message(
-                        roomid,
-                        message.idx,
-                        message,
+                        { text: message.text, roomid: message.roomid, idx: message.idx }
                     );
                     this.getApp().hideCustom();
                     return false;
@@ -1423,7 +1422,11 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                         const split = result.split(',');
                         this.send.message_with_upload(
                             rebuttal.getCurrentView()!.id,
-                            { text, tags: rebuttal.cached_tags },
+                            {
+                                text,
+                                tags: rebuttal.cached_tags,
+                                url: null
+                            },
                             "upload",
                             split[1]
                         );
@@ -1433,7 +1436,11 @@ export function create_client(connection_id: ConnectionUUID, app: RebuttalApp, h
                 reader.readAsDataURL(this.cached_file_upload);
             } else {
                 this.send.message(this.getCurrentView()!.id,
-                    { text, tags: this.cached_tags }
+                    {
+                        text,
+                        tags: this.cached_tags,
+                        url: null
+                    }
                 );
             }
             rebuttal.el.text_input.value = '';

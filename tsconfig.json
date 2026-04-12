@@ -25,15 +25,10 @@
     "types": [
       "jest"
     ],
-    "plugins": [
-      {
-        "transform": "typia/lib/transform"
-      }
-    ],
     "skipLibCheck": true,
     "strictNullChecks": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
   ]
 }

@@ -1,12 +1,12 @@
 // Instance of types.ts RebuttalApp
-import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, ConnectionUUID, AudioList, AppHTML, ClientCredentials, exact_device } from "./types";
+import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, AudioList, AppHTML, ClientCredentials, exact_device } from "./types";
 import { create_app_settings } from "./app_settings";
 import app_context_menu_item from "../templates/app_context_menu_item.html";
 import { v4 as uuidv4 } from 'uuid';
 import { create_client } from "./client";
 import { parser } from "./parser";
 import { create_sound_reader } from "./sound_reader";
-import { is_uuid } from "../../protocol/v1/shared";
+import { type ConnUUID } from "../../protocol/v1/shared";
 
 export function create_app(no_init = false) {
     // Functions in Internal app should not be called from outside and are intended ONLY to assist readability and deduplication
@@ -53,10 +53,10 @@ export function create_app(no_init = false) {
     const add_server_tab = <HTMLImageElement>document.getElementById("onemoreserver");
     const all_client_content = <HTMLDivElement>document.getElementById("appWindow");
     type RebuttalAppInternal = RebuttalApp & {
-        client_list: Map<ConnectionUUID, RebuttalClient>,
+        client_list: Map<ConnUUID, RebuttalClient>,
         el: AppHTML,
         parser: typeof parser,
-        active_tab: ConnectionUUID | null,
+        active_tab: ConnUUID | null,
         allow_mic: boolean,
         allow_webcam: boolean,
         allow_livestream_video: boolean,
@@ -73,7 +73,7 @@ export function create_app(no_init = false) {
         whitenoise: MediaStream | null,
         addClient: (e: Event) => boolean,
         hideAllTabs: () => void,
-        showTab: (hostname: ConnectionUUID | null) => void
+        showTab: (hostname: ConnUUID | null) => void
         init: () => void,
     };
 
@@ -127,7 +127,7 @@ export function create_app(no_init = false) {
                 }
             }
         },
-        showTab: function (id: ConnectionUUID | null): void {
+        showTab: function (id: ConnUUID | null): void {
 
             this.hideAllTabs();
             let tab = document.getElementById(id + "-client-view");
@@ -150,7 +150,7 @@ export function create_app(no_init = false) {
         addTab: function (element: HTMLImageElement) {
             this.el.server_list.appendChild(element);
         },
-        removeTab: function (id: ConnectionUUID) {
+        removeTab: function (id: ConnUUID) {
             if (this.active_tab == id) {
                 this.showTab(null);
             }
@@ -163,7 +163,7 @@ export function create_app(no_init = false) {
         getAllClients: function (): MapIterator<RebuttalClient> {
             return this.client_list.values();
         },
-        getClient: function (id: ConnectionUUID): RebuttalClient | null {
+        getClient: function (id: ConnUUID): RebuttalClient | null {
             for (const client of this.client_list.values()) {
                 if (client.get_connection_id() == id) {
                     return client;
@@ -171,7 +171,7 @@ export function create_app(no_init = false) {
             }
             return null;
         },
-        setActiveTab: function (id: ConnectionUUID | null): void {
+        setActiveTab: function (id: ConnUUID | null): void {
             this.active_tab = id;
             this.hideAllTabs();
             if (id == null) {
@@ -214,7 +214,7 @@ export function create_app(no_init = false) {
                 }
             }
         },
-        getActiveTab: function (): ConnectionUUID | null {
+        getActiveTab: function (): ConnUUID | null {
             return this.active_tab;
         },
         isShowingPopup: function (): boolean {
@@ -517,7 +517,7 @@ export function create_app(no_init = false) {
             }
             this.el.context_menu.innerHTML = '';
             for (const item of list) {
-                const uuid = uuidv4() as unknown as ConnectionUUID; // TODO Is there a cleaner way?
+                const uuid = uuidv4();
                 const itemdiv = this.reconstitute(app_context_menu_item, { text: item.text, uuid: uuid, slidervalue: "" + item.slider });
                 const slider = <HTMLInputElement>(itemdiv.getElementsByClassName("slider")[0]);
                 const slider_label = <HTMLLabelElement>(itemdiv.getElementsByClassName("slider-label")[0]);
@@ -635,16 +635,13 @@ export function create_app(no_init = false) {
                 console.log("URL Before mangling : " + url.toString());
                 // Check to see if it has an invite. This means an invite URL can be pasted right in to server hostname
                 const creds: ClientCredentials = { autoconnect: false };
-                const maybe_uuid = url.searchParams.get("invite");
-                if (url.searchParams.has("invite") && maybe_uuid && is_uuid(maybe_uuid)) {
+                const invite = url.searchParams.get("invite");
+                if (invite != null) {
                     console.log("We have a UUID invite!");
-                    creds.invite = maybe_uuid;
+                    creds.invite = invite;
                 }
                 url.pathname = "/ipc";
                 const new_uuid = uuidv4();
-                if (!is_uuid(new_uuid)) {
-                    throw new Error("UUID was not a UUID");
-                }
                 console.log("URL After : " + url.toString());
                 this.client_list.set(new_uuid, create_client(new_uuid, this, url, creds));
                 this.setActiveTab(new_uuid);
@@ -664,9 +661,10 @@ export function create_app(no_init = false) {
             this.el.hang_up_img.onclick = () => { this.hangUp() };
 
             const url = new URL(window.location.href);
-            let id: string | null | undefined = url.searchParams.get('invite');
-            if (id == null || !(typeof id == 'string') || !is_uuid(id)) {
-                id = undefined;
+            let id: string | undefined = undefined;
+            const invite = url.searchParams.get('invite');
+            if (invite) {
+                id = invite;
             }
             // Callback to return to server-add page
             this.el.add_server_tab.onclick = () => {
@@ -689,12 +687,9 @@ export function create_app(no_init = false) {
                 this.el.server_list.style.display = 'none';
 
                 const not_random_uuid = "3d1462c5-9346-4aed-8813-36a63ed5c3f4";
-                if (is_uuid(not_random_uuid)) {
-                    this.client_list.set(not_random_uuid, create_client(not_random_uuid, this, url, { autoconnect: false, invite: id }));
-                    this.setActiveTab(not_random_uuid);
-                    return;
-                }
-                throw new Error("Yeah no idea how that happened.");
+                this.client_list.set(not_random_uuid, create_client(not_random_uuid, this, url, { autoconnect: false, invite: id }));
+                this.setActiveTab(not_random_uuid);
+                return;
             }
         }
     };
