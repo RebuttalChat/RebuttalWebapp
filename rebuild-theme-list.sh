@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # Delete previous contents
-rm src/themelist.json
+rm dist/themelist.json
 # Concat objects
-cat src/img/*/theme.json > src/themelist.json.tmp
+cat src/img/*/theme.json > dist/themelist.json.tmp
 # Merge into list
-jq -s . src/themelist.json.tmp > src/themelist.json
+jq -s . dist/themelist.json.tmp > dist/themelist.json
 # Clean up
-rm src/themelist.json.tmp
+rm dist/themelist.json.tmp
