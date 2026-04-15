@@ -5,3 +5,5 @@ thumbs.db
 .idea/
 .vscode/
 webapp.tar.gz
+
+src/themelist.json

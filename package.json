@@ -39,8 +39,9 @@
     "webpack-cli": "^6.0.1"
   },
   "scripts": {
-    "build": "sass src:dist && ./node_modules/.bin/webpack",
+    "build": "yarn run build-theme-list && sass src:dist && yarn run webpack",
     "build-zip": "yarn run build && cd dist/ && tar -czf ../webapp.tar.gz * && cd -",
+    "build-theme-list": "./rebuild-theme-list.sh",
     "test": " jest",
     "prepare": "ts-patch install"
   },
