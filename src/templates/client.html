@@ -1,17 +1,33 @@
 <div id="{{client}}-client-view" class="client-view">
-    <div class="popup_container" id="{{client}}-popup-container">
-
-        <div class='popup popupinvite' id='{{client}}-popup-invite'>
-            <div class='invite' id='{{client}}-invite'>
-                <div class='inviteclose close' id='{{client}}-invite-close'></div>
-                <form id='{{client}}-invite-user-form'>
-                    <select id='{{client}}-invite-user-group'>
-                    </select>
-                    <div id='{{client}}-invite-user-reply'></div>
-                    <input type='submit' value='Create Invite' />
-                    <canvas id='{{client}}-invite-qr-code'>
-                </form>
-            </div>
+    <div class="popup-blur" id="{{client}}-popup-blur">
+        <div class="popup-container" id="{{client}}-popup-container">
+            <img id="{{client}}-popup-close" img src="img/{{theme}}/cross.svg" data-src="cross.svg">
+            <form id='{{client}}-create-room' class='popup popupcreateroom'>
+                <label for='{{client}}-create-room-name'>Room name</label>
+                <input type='text' id='{{client}}-create-room-name' />
+                <label for='{{client}}-create-room-type'>Room type</label>
+                <select id='{{client}}-create-room-type'>
+                    <option value='voice'>voice</option>
+                    <option value='text'>text</option>
+                </select>
+                <label for='{{client}}-creater-room-position'>Position</label>
+                <input type="number" value="0" id="{{client}}-create-room-position" />
+                <input id='createroomformsubmit' type='submit' value='Create Room' />
+            </form>
+            <form id='{{client}}-create-user' class='popup popupcreateuser'>
+                <input type='text' id='createusername' placeholder="User name" />
+                <input type='text' id='createuseremail' placeholder="User email" />
+                <select id='createusergroup'>
+                </select>
+                <input type='submit' value='Create User' />
+            </form>
+            <form id='{{client}}-invite-user'>
+                <select id='{{client}}-invite-user-group'>
+                </select>
+                <div id='{{client}}-invite-user-reply'></div>
+                <input type='submit' value='Create Invite' />
+                <canvas id='{{client}}-invite-qr-code'>
+            </form>
         </div>
     </div>
     <div id="{{client}}-signup-view" class="signup-view">

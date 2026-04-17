@@ -40,6 +40,9 @@ export function create_sender(): Sender {
         get_messages: function (roomid: RoomUUID, segment?: number) {
             this.packet({ type: 'getmessages', roomid, segment });
         },
+        create_room: function (room_name: string, room_type: "voice" | "text", position: number) {
+            this.packet({ type: 'createroom', roomName: room_name, roomType: room_type, position })
+        },
         join_room: function (roomid: RoomUUID) {
             this.packet({ type: 'joinroom', roomid });
         },

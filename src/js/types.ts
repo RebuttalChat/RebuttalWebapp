@@ -202,15 +202,24 @@ export interface ClientHTML {
     dnd_img: HTMLImageElement,
     dnd_cancel: HTMLDivElement,
 
-    invite_popup: HTMLDivElement,
+    invite_popup: HTMLFormElement,
     invite: HTMLDivElement,
-    invite_close: HTMLDivElement,
     invite_user_groups: HTMLSelectElement,
     invite_user_reply: HTMLDivElement,
     invite_qr_code: HTMLCanvasElement,
-    invite_form: HTMLFormElement,
 
     popup_container: HTMLDivElement,
+    popup_close: HTMLImageElement,
+
+    add_room_popup: HTMLFormElement,
+    add_room_name: HTMLInputElement,
+    add_room_type: HTMLSelectElement,
+    add_room_position: HTMLInputElement,
+
+    add_user_popup: HTMLFormElement,
+    add_user_name: HTMLInputElement,
+    add_user_group: HTMLSelectElement,
+    add_user_email: HTMLInputElement,
 }
 
 export interface AppHTML {
@@ -289,8 +298,7 @@ export interface RebuttalClient {
     replaceAllPeerMedia(): void
     replacePeerMedia(userid: UserUUID): void, // TODO typing
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    showCustomWindow(custom_window: any),
+    showCustomWindow(custom_window: unknown),
 
     getLiveStream(userid: UserUUID): MediaStream | null,
     getWebcamStream(userid: UserUUID): MediaStream | null,
@@ -332,6 +340,7 @@ export interface Sender {
     message: (roomid: RoomUUID, message: v1_shared_message_ephemeral) => void,
     message_with_upload: (roomid: RoomUUID, message: v1_shared_message_ephemeral, filename: string, b64_contents: string) => void,
     get_messages: (roomid: RoomUUID, segment?: number) => void,
+    create_room: (roomname: string, roomtype: "voice" | "text", position: number) => void,
     join_room: (roomid: RoomUUID) => void,
     leave_room: () => void,
     invite: (groupName: string) => void,

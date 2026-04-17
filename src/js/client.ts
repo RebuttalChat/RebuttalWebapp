@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
 import { handle_message } from './protocol';
 import { create_sender } from './sender';
-import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, ContextMenuItem, ClientCredentials } from './types';
+import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, type ContextMenuItem, type ClientCredentials } from './types';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';
@@ -12,7 +12,7 @@ import client_template_user_selector from '../templates/client-user-selector.htm
 import app_template_server_icon from '../templates/app_server_icon.html';
 import { drawBokehEffect, load } from '@tensorflow-models/body-pix';
 import * as tf from '@tensorflow/tfjs';
-import { ConnUUID, type RoomUUID, type UserUUID, v1_shared_message_real, v1_shared_room, v1_shared_user } from '../../protocol/v1/shared';
+import { type ConnUUID, type RoomUUID, type UserUUID, type v1_shared_message_real, type v1_shared_room, type v1_shared_user } from '../../protocol/v1/shared';
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
 export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
@@ -60,15 +60,24 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
     const add_room_button = <HTMLDivElement>document.getElementById(connection_id + "-room-add");
     const add_user_button = <HTMLDivElement>document.getElementById(connection_id + "-user-add");
 
-    const popup_container = <HTMLDivElement>document.getElementById(connection_id + "-popup-container");
+    const popup_container = <HTMLDivElement>document.getElementById(connection_id + "-popup-blur");
+    const popup_close = <HTMLImageElement>document.getElementById(connection_id + "-popup-close");
 
-    const invite_popup = <HTMLDivElement>document.getElementById(connection_id + "-popup-invite");
     const invite = <HTMLDivElement>document.getElementById(connection_id + "-invite");
-    const invite_close = <HTMLDivElement>document.getElementById(connection_id + "-invite-close");
     const invite_user_groups = <HTMLSelectElement>document.getElementById(connection_id + "-invite-user-group");
     const invite_user_reply = <HTMLDivElement>document.getElementById(connection_id + "-invite-user-reply");
     const invite_qr_code = <HTMLCanvasElement>document.getElementById(connection_id + "-invite-qr-code");
-    const invite_form = <HTMLFormElement>document.getElementById(connection_id + "-invite-user-form");
+    const invite_popup = <HTMLFormElement>document.getElementById(connection_id + "-invite-user");
+
+    const add_room_popup = <HTMLFormElement>document.getElementById(connection_id + "-create-room");
+    const add_room_name = <HTMLInputElement>document.getElementById(connection_id + "-create-room-name");
+    const add_room_type = <HTMLSelectElement>document.getElementById(connection_id + "-create-room-type");
+    const add_room_position = <HTMLInputElement>document.getElementById(connection_id + "-create-room-position");
+
+    const add_user_popup = <HTMLFormElement>document.getElementById(connection_id + "-create-user");
+    const add_user_name = <HTMLInputElement>document.getElementById(connection_id + "-create-user-name");
+    const add_user_group = <HTMLSelectElement>document.getElementById(connection_id + '-create-user-group');
+    const add_user_email = <HTMLInputElement>document.getElementById(connection_id + '-create-user-email');
 
     const voice_view = <HTMLDivElement>document.getElementById(connection_id + "-voice-view");
 
@@ -133,13 +142,13 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             dnd_cancel: text_drag_and_drop_cancel,
             add_room_button,
             add_user_button,
+            popup_container,
+            popup_close,
             invite,
-            invite_close,
             invite_popup,
             invite_qr_code,
             invite_user_groups,
             invite_user_reply,
-            invite_form,
             signup_view,
             signup_desc,
             signup_form,
@@ -149,7 +158,14 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             signup_pass1,
             signup_pass2,
             signup_reply,
-            popup_container
+            add_room_popup,
+            add_room_name,
+            add_room_type,
+            add_room_position,
+            add_user_popup,
+            add_user_name,
+            add_user_email,
+            add_user_group,
         },
         showSignUp() {
             this.el.login_view.style.display = "none";
@@ -735,7 +751,13 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                     }
                 );
 
-                room_label.onclick = () => this.setCurrentView(room.id);
+                if (this.current_view == room.id) {
+                    room_label.classList.add("selected");
+                } else {
+                    room_label.classList.remove("selected");
+                }
+
+                room_label.onclick = () => { this.setCurrentView(room.id) };
                 (<HTMLDivElement>room_label.getElementsByClassName("room-selector-text")[0]).textContent = room.name;
 
 
@@ -1144,8 +1166,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             this.current_voice = null;
             this.closeConnections();
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-        showCustomWindow(custom_window: any) {
+        showCustomWindow(_custom_window: unknown) {
             //TODO
         },
         populate_context_menu(type, id): ContextMenuItem[] {
@@ -1276,19 +1297,25 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
 
             // Callback for create-room
             this.el.add_room_button.onclick = () => {
-                //this.el.room_popup.style.display = '';
+                this.el.add_room_popup.style.display = '';
                 this.el.popup_container.style.display = '';
             };
+
             // Callback for create-user-invite
             this.el.add_user_button.onclick = () => {
                 this.el.invite_popup.style.display = '';
                 this.el.popup_container.style.display = '';
             };
             // Callback for closing...
-            this.el.invite_close.onclick = () => {
+            const hide_all = () => {
                 this.el.invite_popup.style.display = 'none';
                 this.el.popup_container.style.display = 'none';
-            }
+                this.el.add_user_popup.style.display = 'none';
+                this.el.add_room_popup.style.display = 'none';
+            };
+            this.el.popup_close.onclick = hide_all;
+            // Hide all Popups now
+            hide_all();
             // Callback to scroller reached top
             new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -1297,13 +1324,37 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                     }
                 });
             }, { root: scroller }).observe(this.el.load_more_text);
-
-            this.el.popup_container.style.display = 'none';
-            this.el.invite_popup.style.display = 'none';
-            this.el.invite_form.onsubmit = (event) => {
+            /* Helper to clear form */
+            const clear_room_form = () => {
+                this.el.add_room_name.value = "";
+                this.el.add_room_position.value = "0";
+                this.el.add_room_popup.style.display = 'none';
+            }
+            /* Create room */
+            this.el.add_room_popup.onsubmit = (e) => {
+                e.preventDefault();
+                const name = this.el.add_room_name.value;
+                const type = this.el.add_room_type.value;
+                if (type != "voice" && type != "text") {
+                    return;
+                }
+                try {
+                    const position = parseInt(this.el.add_room_position.value);
+                    if (name.length > 0 && type.length > 0) {
+                        clear_room_form();
+                        hide_all();
+                        this.send.create_room(name, type, position);
+                    }
+                } catch (_err) {
+                    return;
+                }
+            }
+            /* Create invite */
+            this.el.invite_popup.onsubmit = (event) => {
                 event.preventDefault();
                 this.send.invite(this.el.invite_user_groups.value);
             }
+            /* Use invite to create account */
             this.el.signup_form.onsubmit = (event) => {
                 event.preventDefault();
                 if (!this.invite) {
@@ -1323,6 +1374,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                     this.el.signup_reply.textContent = "Passwords must match and be at least 7 characters long.";
                 }
             }
+            /* Login */
             this.el.login_form.onsubmit = (event) => {
                 event.preventDefault();
                 this.username = this.el.login_name.value;

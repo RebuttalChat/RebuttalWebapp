@@ -41,6 +41,10 @@
     color: theme.$highlight;
 }
 
+.room-selector.selected {
+    background: #fff6;
+}
+
 .room-selector,
 .user-selector,
 .user-add,
@@ -379,12 +383,21 @@ video {
     width: theme.$iconsize;
 }
 
-.popup_container {
+.popup-blur {
     position: absolute;
     width: 100vw;
     height: 100vh;
     background: #0005;
     backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-container {
+    background-color: theme.$col1;
+    border-radius: 15px;
+    padding: 15px;
 }
 
 .popup {
