@@ -169,6 +169,7 @@ export interface ClientHTML {
     login_password: HTMLInputElement,
     login_desc: HTMLParagraphElement,
     login_reply: HTMLParagraphElement,
+    login_disconnected: HTMLImageElement,
 
     signup_view: HTMLDivElement,
     signup_form: HTMLFormElement,
@@ -179,6 +180,7 @@ export interface ClientHTML {
     signup_pass1: HTMLInputElement,
     signup_pass2: HTMLInputElement,
     signup_reply: HTMLParagraphElement,
+    signup_disconnected: HTMLImageElement,
 
     room_list: HTMLDivElement,
     add_room_button: HTMLDivElement,
@@ -279,10 +281,12 @@ export interface RebuttalClient {
 
     el: ClientHTML,
 
+    hidePopups(): void,
+
     showApp(),
     showLogin(),
     showSignUp(),
-    setLoginReply(message: string),
+    addError(message: string),
 
     getUserByUUID(uuid: UserUUID | null): v1_shared_user | null,
     getUsersByPartialName(bit: string): v1_shared_user[],

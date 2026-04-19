@@ -1,7 +1,7 @@
 // Instance of types.ts RebuttalClient
 import { handle_message } from './protocol';
 import { create_sender } from './sender';
-import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ReconstituteValues, type ContextMenuItem, type ClientCredentials } from './types';
+import { ServerState, type RebuttalClientInternal, type RebuttalApp, FullscreenType, type ContextMenuItem, type ClientCredentials } from './types';
 import client_template from '../templates/client.html';
 import client_template_text_segment from '../templates/client-text-segment.html';
 import client_template_text_message from '../templates/client-text-message.html';
@@ -16,12 +16,12 @@ import { type ConnUUID, type RoomUUID, type UserUUID, type v1_shared_message_rea
 
 console.log('Using TensorFlow backend: ', tf.getBackend());
 export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostname: URL, credentials: ClientCredentials) {
-
+    let reconnect_time = 500;
     // Create room HTML.
     const app_window = document.getElementById("appWindow");
-    const client_html = client_template.replaceAll("{{client}}", connection_id);
+    const client_html = app.reconstitute(client_template, { client: connection_id })
     if (app_window != null) {
-        app_window.innerHTML = app_window.innerHTML + client_html;
+        app_window.innerHTML = app_window.innerHTML + client_html.innerHTML;
     }
 
     const login_form = <HTMLFormElement>document.getElementById(connection_id + "-login-form");
@@ -31,6 +31,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
     const login_password = <HTMLInputElement>document.getElementById(connection_id + "-login-pass");
     const login_image = <HTMLImageElement>document.getElementById(connection_id + "-login-img");
     const login_reply = <HTMLParagraphElement>document.getElementById(connection_id + "-login-reply");
+    const login_disconnected = <HTMLImageElement>document.getElementById(connection_id + "-login-disconnected");
 
     const signup_view = <HTMLDivElement>document.getElementById(connection_id + "-signup-view");
     const signup_form = <HTMLFormElement>document.getElementById(connection_id + "-signup-form");
@@ -41,6 +42,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
     const signup_pass1 = <HTMLInputElement>document.getElementById(connection_id + "-signup-pass");
     const signup_pass2 = <HTMLInputElement>document.getElementById(connection_id + "-signup-pass2");
     const signup_reply = <HTMLParagraphElement>document.getElementById(connection_id + "-signup-reply");
+    const signup_disconnected = <HTMLImageElement>document.getElementById(connection_id + "-signup-disconnected");
 
     const room_list = <HTMLDivElement>document.getElementById(connection_id + "-room-list");
     const user_list = <HTMLDivElement>document.getElementById(connection_id + "-user-list");
@@ -133,6 +135,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             login_image,
             login_desc,
             login_reply,
+            login_disconnected,
             text_chat_scroller,
             text_input_form,
             text_auto_complete,
@@ -158,6 +161,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             signup_pass1,
             signup_pass2,
             signup_reply,
+            signup_disconnected,
             add_room_popup,
             add_room_name,
             add_room_type,
@@ -168,6 +172,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             add_user_group,
         },
         showSignUp() {
+            this.hidePopups();
             this.el.login_view.style.display = "none";
             this.el.core_view.style.display = "none";
             this.el.signup_view.style.display = '';
@@ -178,12 +183,13 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             this.el.signup_view.style.display = 'none';
         },
         showLogin() {
+            this.hidePopups();
             this.el.core_view.style.display = "none";
             this.el.login_view.style.display = "";
             this.el.signup_view.style.display = 'none';
         },
-        setLoginReply(message: string) {
-            this.el.login_reply.innerHTML = this.el.signup_reply.innerHTML = this.getApp().getParser().parse(message).innerHTML;
+        addError(message: string) {
+            this.el.login_reply.innerHTML = this.el.signup_reply.innerHTML = this.el.signup_reply.innerHTML + "\n" + message;
         },
         setUserUUID(userid: UserUUID) {
             this.user_uuid = userid;
@@ -332,6 +338,12 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             }
             return null;
         },
+        hidePopups: function (): void {
+            this.el.invite_popup.style.display = 'none';
+            this.el.popup_container.style.display = 'none';
+            this.el.add_user_popup.style.display = 'none';
+            this.el.add_room_popup.style.display = 'none';
+        },
         isShowingPopup: function (): boolean {
             throw new Error('Function not implemented.');
         },
@@ -394,9 +406,12 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
             try {
                 this.ws = new WebSocket(ipc_location);
             } catch (e) {
+                this.el.login_disconnected.style.display = '';
+                this.el.signup_disconnected.style.display = '';
                 console.log(e);
                 return;
             }
+            reconnect_time = 1000;
             this.send.ws = this.ws;
             this.ws.onmessage = (message) => {
                 if (!message.data || !(typeof message.data === 'string')) {
@@ -407,12 +422,15 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                 handle_message(this, unknown_packet);
             };
             this.ws.onclose = () => {
-                console.log("Connection lost");
+                this.el.login_disconnected.style.display = '';
+                this.el.signup_disconnected.style.display = '';
                 this.showLogin();
-                this.el.login_reply.textContent = "Connection lost";
                 this.ws = null;
-                //app.setActiveTab(null);
-                //app.removeTab(this.connection_id);
+                setTimeout(() => { this.connect() }, reconnect_time);
+                reconnect_time += 1000;
+                if (reconnect_time > 60000) {
+                    reconnect_time = 60000;
+                }
             };
         },
         populateStreamsInVoiceRoom: function (): void {
@@ -1200,11 +1218,11 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
         has_perm(perm: string): boolean {
             return this.user_permissions.indexOf(perm) > -1;
         },
-        get_or_reconstitute(id, template, values: ReconstituteValues) {
+        get_or_reconstitute(id, template, values) {
             values.client = this.connection_id;
             return this.getApp().get_or_reconstitute(id, template, values);
         },
-        reconstitute(input: string, values: ReconstituteValues): HTMLElement {
+        reconstitute(input: string, values): HTMLElement {
             values.client = this.connection_id;
             return this.getApp().reconstitute(input, values);
         },
@@ -1306,16 +1324,9 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                 this.el.invite_popup.style.display = '';
                 this.el.popup_container.style.display = '';
             };
-            // Callback for closing...
-            const hide_all = () => {
-                this.el.invite_popup.style.display = 'none';
-                this.el.popup_container.style.display = 'none';
-                this.el.add_user_popup.style.display = 'none';
-                this.el.add_room_popup.style.display = 'none';
-            };
-            this.el.popup_close.onclick = hide_all;
+            this.el.popup_close.onclick = () => { this.hidePopups() };
             // Hide all Popups now
-            hide_all();
+            this.hidePopups();
             // Callback to scroller reached top
             new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -1342,7 +1353,7 @@ export function create_client(connection_id: ConnUUID, app: RebuttalApp, hostnam
                     const position = parseInt(this.el.add_room_position.value);
                     if (name.length > 0 && type.length > 0) {
                         clear_room_form();
-                        hide_all();
+                        this.hidePopups();
                         this.send.create_room(name, type, position);
                     }
                 } catch (_err) {

@@ -1,5 +1,5 @@
-import { create_app } from "./src/js/app";
-import { type RebuttalApp } from "./src/js/types";
+import { create_app } from "../src/js/app";
+import { type RebuttalApp } from "../src/js/types";
 const rebuttal_app: RebuttalApp = create_app(true);
 
 
@@ -27,7 +27,7 @@ describe("App and Client reconstitute HTML correct", () => {
         expect(rebuttal_app.reconstitute('<{{tag}} id=\'{{id}}\' class=\'{{id}}\'>', { tag: 'img', id: 'alsoimg' }).outerHTML).toBe("<img id=\"alsoimg\" class=\"alsoimg\">");
     });
     it("Populates theme automatically", () => {
-        expect(rebuttal_app.reconstitute("<img src='{{theme}}'>", {}).outerHTML).toBe("<img src=\"bubblegum\">");
+        expect(rebuttal_app.reconstitute("<img src='{{theme}}' id='{{theme}}' class='{{theme}}'>", {}).outerHTML).toBe("<img src=\"bubblegum\" id=\"bubblegum\" class=\"bubblegum\">");
     })
     it("Chokes on bad html", () => {
         expect(() => { rebuttal_app.reconstitute("<This isn't html.", {}) }).toThrow("Invalid reconstitution of HTML");

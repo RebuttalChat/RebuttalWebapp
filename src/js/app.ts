@@ -1,5 +1,5 @@
 // Instance of types.ts RebuttalApp
-import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, ReconstituteValues, AudioList, AppHTML, ClientCredentials, exact_device } from "./types";
+import { type AppSettings, type RebuttalClient, type RebuttalApp, type Theme, type FullscreenMetadata, ContextMenuItem, type ReconstituteValues, AudioList, AppHTML, ClientCredentials, exact_device } from "./types";
 import { create_app_settings } from "./app_settings";
 import app_context_menu_item from "../templates/app_context_menu_item.html";
 import { v4 as uuidv4 } from 'uuid';
@@ -180,8 +180,7 @@ export function create_app(no_init = false) {
             }
             this.showTab(id);
             // It disappears when invisible?
-            //this.el.server_add_form.onsubmit = (e) => { return this.addClient(e) };
-            document.getElementById("add_server_form")!.onsubmit = (e) => { return this.addClient(e); };
+            // document.getElementById("add_server_form")!.onsubmit = (e) => { return this.addClient(e); };
         },
         setTheme(theme: string) {
             // Change CSS
@@ -604,7 +603,6 @@ export function create_app(no_init = false) {
         reconstitute(input: string, values: ReconstituteValues): HTMLElement {
             const a = document.createElement("div");
             values.theme = this.getSettings().getTheme();
-
             for (const key of Object.keys(values)) {
                 input = input.replaceAll("{{" + key + "}}", values[key]);
             }
@@ -688,7 +686,6 @@ export function create_app(no_init = false) {
 
                 const not_random_uuid = "3d1462c5-9346-4aed-8813-36a63ed5c3f4";
                 this.client_list.set(not_random_uuid, create_client(not_random_uuid, this, url, { autoconnect: false, invite: id }));
-                this.setActiveTab(not_random_uuid);
                 return;
             }
         }

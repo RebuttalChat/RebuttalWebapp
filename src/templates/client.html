@@ -43,7 +43,11 @@
             <label for="{{client}}-signup-pass2">Password again</label><input id="{{client}}-signup-pass2"
                 class="password" type="password">
             <input type="submit" value="Sign Up" />
-            <p id="{{client}}-signup-reply"></p>
+            <div class="signup-scrolled">
+                <pre id="{{client}}-signup-reply"></pre>
+            </div>
+            <img src="img/{{theme}}/noconnection.svg" id="{{client}}-signup-disconnected" class="login-disconnected"
+                data-src="noconnection.svg" alt="Connection to server lost. Trying again">
         </form>
     </div>
     <div id="{{client}}-login-view" class="login-view">
@@ -55,7 +59,11 @@
             <label for="{{client}}-login-pass">Password</label>
             <input id="{{client}}-login-pass" class="password" type="password">
             <input type="submit" value="Login" />
-            <p id="{{client}}-login-reply"></p>
+            <div class="login-scroller">
+                <pre id="{{client}}-login-reply"></pre>
+            </div>
+            <img src="img/{{theme}}/noconnection.svg" id="{{client}}-login-disconnected" class="login-disconnected"
+                data-src="noconnection.svg" alt="Connection to server lost. Trying again">
         </form>
     </div>
     <div id="{{client}}-core-view" class="client-core-view">

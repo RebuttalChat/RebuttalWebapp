@@ -478,3 +478,15 @@ canvas.blurcanvas {
     display: flex;
     flex-direction: column;
 }
+
+.login-scroller,
+.signup-scroller {
+    overflow: scroll;
+    height: 3rem;
+}
+
+.login-disconnected,
+.signup-disconnected {
+    max-width: 100px;
+    max-height: 100px;
+}

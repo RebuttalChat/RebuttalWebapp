@@ -3,17 +3,20 @@
 import { RebuttalClientInternal, VideoPayload } from "./types";
 import * as QRCode from 'qrcode';
 import v1_stc_iface from '../../protocol/v1/server_to_client-ti';
+import v0_stc_iface from '../../protocol/v0/server_to_client-ti';
 import v1_shared_iface from "../../protocol/v1/shared-ti";
+import v0_shared_iface from "../../protocol/v0/shared-ti";
 import { v1_stc_packet } from '../../protocol/v1/server_to_client';
 import { v0_stc_packet } from '../../protocol/v0/server_to_client';
 import { createCheckers } from 'ts-interface-checker';
 
 type any_packet = v1_stc_packet | v0_stc_packet;
-const checker = createCheckers(v1_stc_iface, v1_shared_iface);
+const checker = createCheckers(v1_stc_iface, v1_shared_iface, v0_shared_iface, v0_stc_iface);
 
 export function handle_message(client: RebuttalClientInternal,
     unknown_packet: unknown) {
-    if (!checker.v1_stc_packet.test(unknown_packet)) {
+    const valid = checker.v1_stc_packet.test(unknown_packet) || checker.v0_stc_packet.test(unknown_packet);
+    if (!valid) {
         console.log("Invalid Packet");
         console.log(unknown_packet);
         return;
@@ -22,6 +25,10 @@ export function handle_message(client: RebuttalClientInternal,
     switch (packet.type) {
         case "connect":
             {
+                // Hide 'No connection' icon
+                client.el.login_disconnected.style.display = 'none';
+                client.el.signup_disconnected.style.display = 'none';
+                // Show server details
                 client.el.login_image.src = client.el.signup_image.src = packet.icon;
                 client.el.login_desc.innerHTML = client.el.signup_desc.innerHTML = client.getApp().getParser().parse(packet.message).innerHTML;
                 // TODO Re implement themelist, context menus and protocol check
@@ -42,12 +49,11 @@ export function handle_message(client: RebuttalClientInternal,
             }
             return;
         case "error": {
-            client.el.login_reply.innerHTML = client.el.signup_reply.innerHTML = client.getApp().getParser().parse(packet.message).innerHTML;
+            client.addError(
+                client.getApp().getParser().parse(packet.message).innerHTML
+            );
         }
             return;
-
-
-
         case "disconnect": {
             client.cleanupStream(packet.userid);
             client.setWatching(packet.userid, false);
@@ -57,12 +63,11 @@ export function handle_message(client: RebuttalClientInternal,
             const { success, userid } = packet;
             if (success) {
                 client.showApp();
-                client.setLoginReply("");
                 client.setUserUUID(userid);
                 client.getApp().playSound('login');
             } else {
                 client.showLogin();
-                client.setLoginReply('Invalid email or password');
+                client.addError('Invalid email or password');
             }
         }
             return
